@@ -21,10 +21,12 @@ public class BaseBezier extends View {
         super(context, attrs);
     }
 
+    private Paint mPaint = new Paint();
+
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        Paint mPaint = new Paint();
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setColor(0xff66CCFF);
 

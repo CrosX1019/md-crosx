@@ -1,6 +1,7 @@
 package com.root.crosx.ui;
 
 import android.os.Handler;
+import android.view.View;
 import android.view.WindowManager;
 
 import com.root.crosx.BaseActivity;
@@ -29,4 +30,10 @@ public class SplashActivity extends BaseActivity {
             }
         }, 3000);
     }
+
+    @Override
+    public void initListener() {
+
+    }
+
 }
