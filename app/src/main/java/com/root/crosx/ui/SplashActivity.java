@@ -1,8 +1,10 @@
 package com.root.crosx.ui;
 
+import android.os.Handler;
 import android.view.WindowManager;
 
 import com.root.crosx.BaseActivity;
+import com.root.crosx.MainActivity;
 import com.root.crosx.R;
 
 public class SplashActivity extends BaseActivity {
@@ -19,6 +21,12 @@ public class SplashActivity extends BaseActivity {
 
     @Override
     public void initData() {
-
+        Handler mHandler = new Handler();
+        mHandler.postDelayed(new Thread() {
+            @Override
+            public void run() {
+                toActivityWithFinish(MainActivity.class);
+            }
+        }, 3000);
     }
 }

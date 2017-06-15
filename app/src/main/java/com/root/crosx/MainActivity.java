@@ -1,7 +1,7 @@
 package com.root.crosx;
 
-public class MainActivity extends BaseActivity {
 
+public class MainActivity extends BaseActivity {
 
     @Override
     public int setLayoutId() {
