@@ -17,7 +17,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
-        <activity android:name=".ui.BezierActivity"></activity>
+        <activity android:name=".ui.bezier.BezierActivity"></activity>
     </application>
 
 </manifest>

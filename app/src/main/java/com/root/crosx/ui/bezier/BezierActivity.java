@@ -1,4 +1,4 @@
-package com.root.crosx.ui;
+package com.root.crosx.ui.bezier;
 
 import android.view.View;
 import android.widget.Button;

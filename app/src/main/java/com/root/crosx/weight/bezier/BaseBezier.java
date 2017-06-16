@@ -22,6 +22,7 @@ public class BaseBezier extends View {
     }
 
     private Paint mPaint = new Paint();
+    private Path mPath = new Path();
 
 
     @Override
@@ -30,7 +31,6 @@ public class BaseBezier extends View {
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setColor(0xff66CCFF);
 
-        Path mPath = new Path();
         mPath.moveTo(100, 300);
         mPath.quadTo(200, 200, 300, 300);
         mPath.quadTo(400, 400, 500, 300);

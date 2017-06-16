@@ -3,8 +3,9 @@ package com.root.crosx;
 
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
-import com.root.crosx.ui.BezierActivity;
+import com.root.crosx.ui.bezier.BezierActivity;
 
 public class MainActivity extends BaseActivity {
 
@@ -31,6 +32,7 @@ public class MainActivity extends BaseActivity {
         mBtnTouchBezier.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Toast.makeText(mActivity, getString(R.string.app_name), Toast.LENGTH_SHORT).show();
                 toActivity(BezierActivity.class);
             }
         });
