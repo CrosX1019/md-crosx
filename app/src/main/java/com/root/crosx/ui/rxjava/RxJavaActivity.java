@@ -1,24 +1,40 @@
 package com.root.crosx.ui.rxjava;
 
+import android.text.TextUtils;
+import android.util.Xml;
+import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
-import com.hwangjr.rxbus.RxBus;
 import com.jakewharton.rxbinding.view.RxView;
 import com.root.crosx.BaseActivity;
 import com.root.crosx.R;
 import com.root.crosx.bean.TestParent;
 import com.root.crosx.bean.TestSub;
 import com.root.crosx.utils.LogUtil;
+import com.root.crosx.utils.ToastUtil;
 
+import org.xmlpull.v1.XmlPullParser;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.OkHttpClient;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 
 /**
@@ -53,9 +69,17 @@ import rx.functions.Func1;
 
 public class RxJavaActivity extends BaseActivity {
 
+    private static final String WEATHER_API_URL = "http://php.weather.sina.com.cn/xml.php?city=%s&password=DJOYnieT8234jlsK&day=0";
+
     private Observer<String> observer;
 
     private Subscriber<String> subscriber;
+
+    private Subscription subscription;
+
+    private EditText editCity;
+    private Button search;
+    private TextView weatherTV;
 
     @Override
     public int setLayoutId() {
@@ -64,18 +88,236 @@ public class RxJavaActivity extends BaseActivity {
 
     @Override
     public void initView() {
-
+        editCity = $(R.id.edit_city);
+        search = $(R.id.search);
+        weatherTV = $(R.id.weather);
     }
 
     @Override
     public void initData() {
-        initObserver();
-        initObservable();
+//        initObserver();
+//        initObservable();
     }
 
     @Override
     public void initListener() {
+        search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String city = editCity.getText().toString();
+                if (TextUtils.isEmpty(city)) {
+                    ToastUtil.show("城市不能为空!");
+                    return;
+                }
+                //采用普通写法创建Observable
+                observableAsNormal(city);
+            }
+        });
+//        RxView.clicks(search).throttleFirst(500, TimeUnit.SECONDS).subscribe(new Subscriber<Void>() {
+//            @Override
+//            public void onCompleted() {
+//
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//
+//            }
+//
+//            @Override
+//            public void onNext(Void aVoid) {
+//                String city = editCity.getText().toString();
+//                if(TextUtils.isEmpty(city)){
+//                    ToastUtil.show("城市不能为空!");
+//                    return;
+//                }
+//                //采用普通写法创建Observable
+//                observableAsNormal(city);
+//            }
+//        });
+    }
 
+    /**
+     * 获取指定城市的天气情况
+     *
+     * @param city
+     * @return
+     * @throws
+     */
+    private String getWeather(String city) throws Exception {
+        BufferedReader reader = null;
+        HttpURLConnection connection = null;
+
+        try {
+            String urlString = String.format(WEATHER_API_URL, URLEncoder.encode(city, "GBK"));
+            URL url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setReadTimeout(5000);
+            connection.connect();
+
+            reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
+            StringBuffer sb = new StringBuffer();
+            String line = "";
+            while (!TextUtils.isEmpty(line = reader.readLine())) sb.append(line);
+
+            return sb.toString();
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * 解析xml获取天气情况
+     *
+     * @param weatherXml
+     * @return
+     */
+    private Weather parseWeather(String weatherXml) {
+        //采用Pull方式解析xml
+        StringReader reader = new StringReader(weatherXml);
+        XmlPullParser xmlParser = Xml.newPullParser();
+        Weather weather = null;
+        try {
+            xmlParser.setInput(reader);
+            int eventType = xmlParser.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                switch (eventType) {
+                    case XmlPullParser.START_DOCUMENT:
+                        weather = new Weather();
+                        break;
+                    case XmlPullParser.START_TAG:
+                        String nodeName = xmlParser.getName();
+                        if ("city".equals(nodeName)) {
+                            weather.city = xmlParser.nextText();
+                        } else if ("savedate_weather".equals(nodeName)) {
+                            weather.date = xmlParser.nextText();
+                        } else if ("temperature1".equals(nodeName)) {
+                            weather.temperature = xmlParser.nextText();
+                        } else if ("temperature2".equals(nodeName)) {
+                            weather.temperature += "-" + xmlParser.nextText();
+                        } else if ("direction1".equals(nodeName)) {
+                            weather.direction = xmlParser.nextText();
+                        } else if ("power1".equals(nodeName)) {
+                            weather.power = xmlParser.nextText();
+                        } else if ("status1".equals(nodeName)) {
+                            weather.status = xmlParser.nextText();
+                        }
+                        break;
+                }
+                eventType = xmlParser.next();
+            }
+            return weather;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            reader.close();
+        }
+    }
+
+    /**
+     * 天气情况类
+     */
+    private class Weather {
+        /**
+         * 城市
+         */
+        String city;
+        /**
+         * 日期
+         */
+        String date;
+        /**
+         * 温度
+         */
+        String temperature;
+        /**
+         * 风向
+         */
+        String direction;
+        /**
+         * 风力
+         */
+        String power;
+        /**
+         * 天气状况
+         */
+        String status;
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("城市:" + city + "\r\n");
+            builder.append("日期:" + date + "\r\n");
+            builder.append("天气状况:" + status + "\r\n");
+            builder.append("温度:" + temperature + "\r\n");
+            builder.append("风向:" + direction + "\r\n");
+            builder.append("风力:" + power + "\r\n");
+            return builder.toString();
+        }
+    }
+
+
+    /**
+     * 采用普通写法创建Observable
+     *
+     * @param city
+     */
+    private void observableAsNormal(final String city) {
+        subscription = Observable.create(new Observable.OnSubscribe<Weather>() {
+            @Override
+            public void call(Subscriber<? super Weather> subscriber) {
+                //1.如果已经取消订阅，则直接退出
+                if (subscriber.isUnsubscribed()) return;
+                try {
+                    //2.开网络连接请求获取天气预报，返回结果是xml格式
+                    String weatherXml = getWeather(city);
+                    //3.解析xml格式，返回weather实例
+                    Weather weather = parseWeather(weatherXml);
+                    //4.发布事件通知订阅者
+                    subscriber.onNext(weather);
+                    //5.事件通知完成
+                    subscriber.onCompleted();
+                } catch (Exception e) {
+                    //6.出现异常，通知订阅者
+                    subscriber.onError(e);
+                }
+            }
+        }).subscribeOn(Schedulers.newThread())    //让Observable运行在新线程中
+                .observeOn(AndroidSchedulers.mainThread())   //让subscriber运行在主线程中
+                .subscribe(new Subscriber<Weather>() {
+                    @Override
+                    public void onCompleted() {
+                        //对应上面的第5点：subscriber.onCompleted();
+                        //这里写事件发布完成后的处理逻辑
+                        ToastUtil.show("获取成功!");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        //对应上面的第6点：subscriber.onError(e);
+                        //这里写出现异常后的处理逻辑
+                        ToastUtil.show(e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(Weather weather) {
+                        //对应上面的第4点：subscriber.onNext(weather);
+                        //这里写获取到某一个事件通知后的处理逻辑
+                        if (weather != null)
+                            weatherTV.setText(weather.toString());
+                    }
+                });
     }
 
     /**
@@ -283,8 +525,7 @@ public class RxJavaActivity extends BaseActivity {
 
                 return Observable.from(testParent.getSubList());
             }
-        })
-                .subscribe(s);
+        }).subscribe(s);
 
 
     }

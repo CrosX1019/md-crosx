@@ -18,6 +18,7 @@ import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.root.crosx.ui.bezier.BezierActivity;
+import com.root.crosx.ui.retrofit.RetrofitActivity;
 import com.root.crosx.ui.rxjava.RxJavaActivity;
 
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class MainActivity extends BaseActivity {
         mBtnBaseBezier.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                toActivity(RxJavaActivity.class);
+                toActivity(RetrofitActivity.class);
             }
         });
 

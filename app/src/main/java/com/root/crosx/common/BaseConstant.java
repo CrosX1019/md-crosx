@@ -12,4 +12,5 @@ public class BaseConstant {
     //初始化全局Context
     public static Context context = App.getAppContext();
 
+
 }
